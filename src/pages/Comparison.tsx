@@ -22,9 +22,17 @@ export default function Comparison() {
   const { datasets, rows, hasData } = useBenchmarkData();
   const rankingMetric = useAppStore((s) => s.rankingMetric);
   const globalView = useAppStore((s) => s.datasetView);
+  const setDatasetView = useAppStore((s) => s.setDatasetView);
 
-  const [dsState, setDs] = useState('');
+  const [dsState, setDs] = useState(() => (datasets.includes(globalView) ? globalView : datasets[0] ?? ''));
+  useEffect(() => {
+    if (datasets.includes(globalView)) setDs(globalView);
+  }, [globalView, datasets]);
   const ds = datasets.includes(dsState) ? dsState : datasets.includes(globalView) ? globalView : datasets[0] ?? '';
+  const handleSelectDataset = (nextDs: string) => {
+    setDs(nextDs);
+    if (globalView !== 'both') setDatasetView(nextDs);
+  };
   const dsRows = useMemo(() => rows.filter((r) => r.dataset === ds), [rows, ds]);
   const available = useMemo(() => dsRows.map((r) => r.model), [dsRows]);
 
@@ -74,7 +82,7 @@ export default function Comparison() {
       <Card className="space-y-4 p-4">
         <div className="flex flex-wrap items-center gap-3">
           <span className="label-xs">Dataset</span>
-          <DatasetPicker value={ds} onChange={setDs} datasets={datasets} />
+          <DatasetPicker value={ds} onChange={handleSelectDataset} datasets={datasets} />
         </div>
         <div>
           <p className="label-xs mb-2">Models ({effective.length} selected)</p>

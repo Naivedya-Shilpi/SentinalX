@@ -99,7 +99,7 @@ function UploadCard({ kind, title, description, schema, accept, icon, optional }
         <dl className="grid grid-cols-2 gap-3 text-[13px]">
           <div className="rounded-lg border border-line/10 p-3"><dt className="label-xs">Active file</dt><dd className="mt-1 break-words">{loaded ? artifact.fileName ?? '—' : 'None'}</dd></div>
           <div className="rounded-lg border border-line/10 p-3"><dt className="label-xs">Rows loaded</dt><dd className="num mt-1">{fmtInt(artifact.rows.length)}</dd></div>
-          <div className="col-span-2 rounded-lg border border-line/10 p-3"><dt className="label-xs">Status</dt><dd className="mt-1">{!loaded ? 'No data loaded' : artifact.source === 'demo' ? 'Built-in demo data' : `Imported ${fmtDate(artifact.importedAt)}`}</dd></div>
+          <div className="col-span-2 rounded-lg border border-line/10 p-3"><dt className="label-xs">Status</dt><dd className="mt-1">{!loaded ? 'No data loaded' : artifact.source === 'demo' ? 'Bundled Databricks Results' : `Imported ${fmtDate(artifact.importedAt)}`}</dd></div>
         </dl>
 
         {report && (
@@ -146,8 +146,8 @@ export default function DataImport() {
         description="Load results exported from Databricks. Files are parsed in your browser, stored in local storage and never sent anywhere. Every other page is computed from what you load here."
         actions={
           <>
-            <Button variant="secondary" onClick={() => { resetToDemo(); toast({ kind: 'info', title: 'Reset to demo data', description: 'Built-in demonstration results are active again.' }); }}>
-              <FlaskConical className="h-4 w-4" /> Reset to demo data
+            <Button variant="secondary" onClick={() => { resetToDemo(); toast({ kind: 'info', title: 'Reset to Databricks Export', description: 'Bundled Databricks Results are active again.' }); }}>
+              <FlaskConical className="h-4 w-4" /> Reset to Databricks Export
             </Button>
             <Button variant="danger" onClick={() => { clearAll(); toast({ kind: 'info', title: 'All data cleared', description: 'Pages will show import prompts until data is loaded.' }); }}>
               <Trash2 className="h-4 w-4" /> Clear everything
@@ -158,8 +158,8 @@ export default function DataImport() {
 
       {storageError && <Callout tone="warning" title="Browser storage problem">{storageError}</Callout>}
 
-      <Callout tone="info" title="Demo vs imported data">
-        The built-in demo contains the project’s recorded experiment results, recomputed from exact confusion-matrix counts (AUC-ROC uses the reported values). Badges across the app show whether you are viewing <b>Demo</b> or <b>Imported</b> data. Importing a file replaces the demo for that data type only.
+      <Callout tone="info" title="Bundled Databricks Results vs imported data">
+        The bundled dataset contains the project’s recorded Databricks Spark MLlib experiment exports (<b>final_benchmarks.csv</b> and <b>confusion_matrices.csv</b>). Badges across the app show whether you are viewing <b>Databricks Export</b> or custom <b>Imported</b> data. Importing a file replaces the bundled data for that data type only.
       </Callout>
 
       <div className="grid gap-6 xl:grid-cols-3">

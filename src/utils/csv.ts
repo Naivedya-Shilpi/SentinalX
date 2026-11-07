@@ -27,7 +27,7 @@ const HEADER_ALIASES: Record<string, string[]> = {
   accuracy: ['accuracy', 'acc'],
   weightedPrecision: ['weightedprecision', 'precisionweighted', 'wprecision'],
   weightedRecall: ['weightedrecall', 'recallweighted', 'wrecall'],
-  weightedF1: ['weightedf1', 'f1weighted', 'wf1', 'weightedf1score'],
+  weightedF1: ['weightedf1', 'f1weighted', 'wf1', 'weightedf1score', 'f1'],
   attackPrecision: ['attackprecision', 'precisionattack', 'precision1', 'attackprec'],
   attackRecall: ['attackrecall', 'recallattack', 'recall1', 'detectionrate'],
   attackF1: ['attackf1', 'f1attack', 'f11', 'attackf1score'],

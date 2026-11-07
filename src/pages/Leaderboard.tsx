@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Feedback';
 import { Overlay } from '@/components/ui/Overlay';
-import { ActiveSource, DatasetSwitcher, MetricLabel, MetricSelect, ModelFilter, PageHeader } from '@/components/common/Controls';
+import { ActiveSource, DatasetSwitcher, MetricLabel, MetricSelect, MetricTip, ModelFilter, PageHeader } from '@/components/common/Controls';
 import { NoDataState } from '@/components/common/Misc';
 import { METRIC_KEYS } from '@/data/metrics';
 import { rankOf, rankRows } from '@/utils/ranking';
@@ -63,7 +63,7 @@ export default function Leaderboard() {
           const c = cmp(a, b);
           return sortKey === 'model' && dir === 'desc' ? -c : sortKey === 'rank' && dir === 'asc' ? -c : c;
         });
-        return { dataset, rows: visible, rankMap, ranked, unrankedCount: unranked.length };
+        return { dataset, dsRows, rows: visible, rankMap, ranked, unrankedCount: unranked.length };
       }),
     [activeDatasets, filteredRows, rankingMetric, q, sortKey, dir],
   );
@@ -90,16 +90,18 @@ export default function Leaderboard() {
 
   if (!hasData) return <NoDataState />;
 
-  const SortIcon = ({ k }: { k: SortKey }) =>
+  const sortIcon = (k: SortKey) =>
     sortKey !== k ? <ArrowUpDown className="h-3 w-3 opacity-40" /> : dir === 'desc' ? <ArrowDown className="h-3 w-3 text-cyan" /> : <ArrowUp className="h-3 w-3 text-cyan" />;
 
-  const th = (k: SortKey, label: React.ReactNode, align: 'left' | 'right' = 'right', active = false) => (
-    <th scope="col" aria-sort={sortKey === k ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'} className={cn('px-3 py-3 font-medium', align === 'right' ? 'text-right' : 'text-left', active && 'text-cyan')}>
+  /** Sortable header. `tip` (which renders its own button) is placed beside — never inside — the sort button. */
+  const th = (k: SortKey, label: string, align: 'left' | 'right' = 'right', active = false, tip?: React.ReactNode) => (
+    <th key={k} scope="col" aria-sort={sortKey === k ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'} className={cn('px-3 py-3 font-medium', align === 'right' ? 'text-right' : 'text-left', active && 'text-cyan')}>
       <span className={cn('inline-flex items-center gap-1', align === 'right' && 'flex-row-reverse')}>
-        <button type="button" onClick={() => onSort(k)} className="inline-flex items-center gap-1 rounded hover:text-fg" aria-label={`Sort by ${typeof label === 'string' ? label : k}`}>
-          {typeof label === 'string' ? label : label}
-          <SortIcon k={k} />
+        <button type="button" onClick={() => onSort(k)} className="inline-flex items-center gap-1 rounded hover:text-fg" aria-label={`Sort by ${label}`}>
+          {label}
+          {sortIcon(k)}
         </button>
+        {tip}
       </span>
     </th>
   );
@@ -167,7 +169,7 @@ export default function Leaderboard() {
                     {th('rank', 'Rank', 'left')}
                     {th('model', 'Model', 'left')}
                     <th scope="col" className="px-3 py-3 text-left font-medium">Dataset</th>
-                    {COLUMNS.map((m) => th(m, <MetricLabel metric={m} />, 'right', m === rankingMetric))}
+                    {COLUMNS.map((m) => th(m, METRICS[m].label, 'right', m === rankingMetric, <MetricTip metric={m} />))}
                     <th scope="col" className="px-3 py-3 text-left font-medium">Status</th>
                   </tr>
                 </thead>
@@ -198,7 +200,7 @@ export default function Leaderboard() {
                         <td className="px-3 py-3.5 text-muted">{row.dataset}</td>
                         {COLUMNS.map((m) => {
                           const v = row.metrics[m];
-                          const colTop = rankOf(rows, row, m);
+                          const colTop = rankOf(s.dsRows, row, m);
                           return (
                             <td key={m} className={cn('num px-3 py-3.5 text-right', m === rankingMetric && 'bg-cyan/[0.04] font-semibold text-fg', !isValidMetric(v) && 'text-neutral')}>
                               {isValidMetric(v) ? fmtPct(v) : <span title="Missing value — not ranked">n/a</span>}

@@ -1,13 +1,58 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_BENCHMARKS, DEMO_CONFUSION, DEMO_REPORTED } from '@/data/demoData';
+import { DEMO_BENCHMARKS, DEMO_CONFUSION, DEMO_METADATA, DEMO_REPORTED } from '@/data/demoData';
+import { METRIC_KEYS } from '@/data/metrics';
 import { bestEntries, rankRows } from '@/utils/ranking';
-import { deriveFromConfusion, safeDiv } from '@/utils/metrics';
+import { deriveFromConfusion, isValidMetric, safeDiv } from '@/utils/metrics';
 import { parseBenchmarkCsv, parseConfusionCsv, parseMetadataJson } from '@/utils/csv';
 import { diffRows } from '@/utils/insights';
 import { fmtPP } from '@/utils/format';
 import type { BenchmarkRow, MetricKey } from '@/types';
 
 const winner = (ds: string, m: MetricKey) => bestEntries(DEMO_BENCHMARKS, ds, m).map((e) => e.row.model);
+
+describe('Databricks CSV integration validation', () => {
+  it('loads exactly 10 benchmark records and 10 confusion matrix records with 1-to-1 matching', () => {
+    expect(DEMO_BENCHMARKS).toHaveLength(10);
+    expect(DEMO_CONFUSION).toHaveLength(10);
+    const benchIds = DEMO_BENCHMARKS.map((r) => r.id);
+    const confIds = DEMO_CONFUSION.map((r) => r.id);
+    expect(new Set(benchIds).size).toBe(10);
+    expect(new Set(confIds).size).toBe(10);
+    expect(benchIds).toEqual(confIds);
+  });
+
+  it('has numeric values for all 8 metrics across all 10 benchmark records', () => {
+    for (const row of DEMO_BENCHMARKS) {
+      for (const key of METRIC_KEYS) {
+        expect(isValidMetric(row.metrics[key])).toBe(true);
+      }
+    }
+  });
+
+  it('uses the corrected UNSW-NB15 Naive Bayes result from final_benchmarks.csv', () => {
+    const nb = DEMO_BENCHMARKS.find((r) => r.dataset === 'UNSW-NB15' && r.model === 'Naive Bayes')!;
+    expect(nb.metrics).toEqual({
+      accuracy: 0.7722,
+      weightedPrecision: 0.799,
+      weightedRecall: 0.7722,
+      weightedF1: 0.7712,
+      attackPrecision: 0.8883,
+      attackRecall: 0.6707,
+      attackF1: 0.7643,
+      aucRoc: 0.6959,
+    });
+  });
+
+  it('derives test-set class distributions from confusion matrices without mixing training counts', () => {
+    expect(DEMO_METADATA).toHaveLength(2);
+    const unsw = DEMO_METADATA.find((m) => m.dataset === 'UNSW-NB15')!;
+    const nsl = DEMO_METADATA.find((m) => m.dataset === 'NSL-KDD')!;
+    expect(unsw.train).toBeUndefined();
+    expect(unsw.test).toEqual({ normal: 37000, attack: 45332 });
+    expect(nsl.train).toBeUndefined();
+    expect(nsl.test).toEqual({ normal: 9711, attack: 12833 });
+  });
+});
 
 describe('expected ranking checks (demo data)', () => {
   it('UNSW-NB15', () => {
@@ -26,16 +71,21 @@ describe('expected ranking checks (demo data)', () => {
 });
 
 describe('confusion-derived metrics', () => {
-  it('recomputes UNSW Naive Bayes precision and F1 at full precision', () => {
+  it('recomputes UNSW Naive Bayes precision and F1 at full precision and matches the CSV export', () => {
     const nb = DEMO_BENCHMARKS.find((r) => r.dataset === 'UNSW-NB15' && r.model === 'Naive Bayes')!;
-    expect(nb.metrics.attackPrecision).toBeCloseTo(30405 / (30405 + 3825), 12);
-    expect(nb.metrics.attackPrecision!).toBeCloseTo(0.8883, 3); // differs from the rounded 0.8900
-    expect(nb.metrics.attackF1!).toBeCloseTo(0.7643, 3);
+    const nbCm = DEMO_CONFUSION.find((r) => r.dataset === 'UNSW-NB15' && r.model === 'Naive Bayes')!;
+    const derived = deriveFromConfusion(nbCm);
+    expect(derived.attackPrecision).toBeCloseTo(30405 / (30405 + 3825), 12);
+    expect(nb.metrics.attackPrecision!).toBeCloseTo(derived.attackPrecision!, 4);
+    expect(nb.metrics.attackPrecision!).toBe(0.8883); // corrected CSV value, not the rounded 0.8900
+    expect(nb.metrics.attackF1!).toBe(0.7643);
   });
-  it('matches the reported accuracy within rounding for every model', () => {
+  it('matches the confusion-derived accuracy within rounding for every model', () => {
     for (const rep of DEMO_REPORTED) {
       const row = DEMO_BENCHMARKS.find((r) => r.dataset === rep.dataset && r.model === rep.model)!;
-      expect(Math.abs(row.metrics.accuracy! - rep.accuracy!)).toBeLessThan(0.0006);
+      const cm = DEMO_CONFUSION.find((r) => r.dataset === rep.dataset && r.model === rep.model)!;
+      const derived = deriveFromConfusion(cm);
+      expect(Math.abs(row.metrics.accuracy! - derived.accuracy!)).toBeLessThan(0.0006);
     }
   });
   it('test sets sum to the documented record counts', () => {

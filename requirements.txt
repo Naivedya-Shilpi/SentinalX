@@ -1,0 +1,28 @@
+# =============================================================================
+# SentinelX — Local Python Dependencies
+# =============================================================================
+# Used by:
+#   - powerbi/generate_powerbi_exports.py (reads UNSW-NB15 Parquet files,
+#     NSL-KDD text files, and Databricks CSV exports to build and validate
+#     the six Power BI analytical CSV tables).
+#
+# Install locally in a virtual environment:
+#   python -m venv .venv
+#   .venv\Scripts\activate
+#   pip install -r requirements.txt
+# =============================================================================
+
+numpy>=1.26.0
+pandas>=2.1.0
+pyarrow>=14.0.0
+
+# =============================================================================
+# Databricks Runtime Dependencies (Pre-installed in Databricks)
+# =============================================================================
+# The distributed machine learning notebook (databricks/Big_Data_Project.ipynb)
+# executes on Databricks Runtime (Apache Spark / PySpark) where PySpark and
+# Spark MLlib are pre-configured by the cluster environment.
+#
+# Do NOT install pyspark on a Databricks cluster. If you wish to run or lint
+# PySpark code locally outside Databricks (requires Java 11/17 JDK), uncomment:
+# pyspark>=3.5.0

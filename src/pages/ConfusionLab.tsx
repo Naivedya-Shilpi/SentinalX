@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Grid2x2 } from 'lucide-react';
 import { useBenchmarkData } from '@/hooks/useBenchmarkData';
 import { useAppStore } from '@/store/useAppStore';
-import { datasetColor } from '@/data/datasets';
-import { modelColor } from '@/data/models';
+import { datasetColor, datasetOrder } from '@/data/datasets';
+import { modelColor, modelOrder } from '@/data/models';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState, Callout } from '@/components/ui/Feedback';
 import { InfoTip } from '@/components/ui/InfoTip';
@@ -30,12 +30,23 @@ const TONE = {
 export default function ConfusionLab() {
   const { confusionRows, getConfusion } = useBenchmarkData();
   const globalView = useAppStore((s) => s.datasetView);
+  const setDatasetView = useAppStore((s) => s.setDatasetView);
   const source = useAppStore((s) => s.confusion.source);
 
-  const datasets = [...new Set(confusionRows.map((r) => r.dataset))];
-  const [dsState, setDs] = useState('');
+  const datasets = [...new Set(confusionRows.map((r) => r.dataset))].sort((a, b) => datasetOrder(a) - datasetOrder(b) || a.localeCompare(b));
+  const [dsState, setDs] = useState(() => (datasets.includes(globalView) ? globalView : datasets[0] ?? ''));
+  useEffect(() => {
+    if (datasets.includes(globalView)) setDs(globalView);
+  }, [globalView, datasets]);
   const ds = datasets.includes(dsState) ? dsState : datasets.includes(globalView) ? globalView : datasets[0] ?? '';
-  const models = confusionRows.filter((r) => r.dataset === ds).map((r) => r.model);
+  const handleSelectDataset = (nextDs: string) => {
+    setDs(nextDs);
+    if (globalView !== 'both') setDatasetView(nextDs);
+  };
+  const models = confusionRows
+    .filter((r) => r.dataset === ds)
+    .map((r) => r.model)
+    .sort((a, b) => modelOrder(a) - modelOrder(b) || a.localeCompare(b));
   const [modelState, setModel] = useState('');
   const model = models.includes(modelState) ? modelState : models[0] ?? '';
 
@@ -81,7 +92,7 @@ export default function ConfusionLab() {
       <Card className="flex flex-wrap items-center gap-4 p-4">
         <div className="flex items-center gap-2">
           <span className="label-xs">Dataset</span>
-          <DatasetPicker value={ds} onChange={setDs} datasets={datasets} />
+          <DatasetPicker value={ds} onChange={handleSelectDataset} datasets={datasets} />
         </div>
         <label className="flex items-center gap-2 text-[13px] text-muted" htmlFor="cm-model">
           <span className="label-xs">Model</span>
@@ -140,7 +151,7 @@ export default function ConfusionLab() {
               <Callout className="mt-4" tone="warning" title="Reading the errors">
                 A false negative is a missed attack; a false positive is a false alarm. The model here missed <b className="num">{fmtInt(cm.fn)}</b> attacks and raised <b className="num">{fmtInt(cm.fp)}</b> false alarms.
               </Callout>
-              {source === 'demo' && <p className="mt-3 text-[11px] text-subtle">Counts shown are the project's recorded experiment counts (demo data source).</p>}
+              {source === 'demo' && <p className="mt-3 text-[11px] text-subtle">Counts shown are the project's recorded experiment counts (Bundled Databricks Results).</p>}
             </CardBody>
           </Card>
         </div>

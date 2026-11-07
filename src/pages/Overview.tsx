@@ -49,6 +49,8 @@ function Kpi({ icon, label, children, sub, delay, accent = 'cyan' }: { icon: Rea
 
 function Spotlight({ rows, datasets, metric }: { rows: BenchmarkRow[]; datasets: string[]; metric: MetricKey }) {
   const { getConfusion } = useBenchmarkData();
+  const benchmarksSource = useAppStore((s) => s.benchmarks.source);
+  const confusionSource = useAppStore((s) => s.confusion.source);
   const [ds, setDs] = useState(datasets[0]);
   useEffect(() => {
     if (!datasets.includes(ds)) setDs(datasets[0]);
@@ -58,7 +60,8 @@ function Spotlight({ rows, datasets, metric }: { rows: BenchmarkRow[]; datasets:
   const { ranked } = rankRows(rows.filter((r) => r.dataset === dataset), metric);
   const winners = ranked.filter((e) => e.rank === 1);
   const winner = winners[0];
-  const narrative = winner && winners.length === 1 ? spotlightNarrative(rows, dataset, metric, getConfusion(dataset, winner.row.model)) : winner ? spotlightNarrative(rows, dataset, metric) : [];
+  const cm = winner && winners.length === 1 && benchmarksSource === confusionSource ? getConfusion(dataset, winner.row.model) : undefined;
+  const narrative = winner ? spotlightNarrative(rows, dataset, metric, cm) : [];
 
   return (
     <Card glow={winner ? 'emerald' : false} className="overflow-hidden">
@@ -124,8 +127,7 @@ function Spotlight({ rows, datasets, metric }: { rows: BenchmarkRow[]; datasets:
 export default function Overview() {
   const data = useBenchmarkData();
   const rankingMetric = useAppStore((s) => s.rankingMetric);
-  const benchmarks = useAppStore((s) => s.benchmarks);
-  const { filteredRows, activeDatasets, rows, datasets, models, shownModels } = data;
+  const { filteredRows, activeDatasets, models, shownModels } = data;
 
   const [sort, setSort] = useState<'metric' | 'name'>('metric');
   const [attackMetrics, setAttackMetrics] = useState<MetricKey[]>(['attackPrecision', 'attackRecall', 'attackF1']);
@@ -134,14 +136,15 @@ export default function Overview() {
   const [radarB, setRadarB] = useState('');
 
   const rd = activeDatasets.includes(radarDs) ? radarDs : activeDatasets[0] ?? '';
-  const radarModels = models.filter((m) => rows.some((r) => r.dataset === rd && r.model === m));
+  const radarModels = shownModels.filter((m) => filteredRows.some((r) => r.dataset === rd && r.model === m));
   const a = radarModels.includes(radarA) ? radarA : radarModels[0] ?? '';
   const b = radarModels.includes(radarB) && radarB !== a ? radarB : radarModels.find((m) => m !== a) ?? '';
 
-  const radarRows = useMemo(() => [a, b].filter(Boolean).map((m) => rows.find((r) => r.dataset === rd && r.model === m)).filter((r): r is BenchmarkRow => !!r), [a, b, rd, rows]);
+  const radarRows = useMemo(() => [a, b].filter(Boolean).map((m) => filteredRows.find((r) => r.dataset === rd && r.model === m)).filter((r): r is BenchmarkRow => !!r), [a, b, rd, filteredRows]);
 
   const topAcc = topOf(filteredRows, 'accuracy');
   const topRec = topOf(filteredRows, 'attackRecall');
+  const scopedModels = useMemo(() => [...new Set(filteredRows.map((r) => r.model))], [filteredRows]);
 
   // Best model by the selected metric: one leader per active dataset.
   const leaders = activeDatasets.map((d) => ({ d, entries: rankRows(filteredRows.filter((r) => r.dataset === d), rankingMetric).ranked.filter((e) => e.rank === 1) })).filter((x) => x.entries.length);
@@ -193,14 +196,14 @@ export default function Overview() {
 
       {/* ---------------- KPIs ---------------- */}
       <section aria-label="Key figures" className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
-        <Kpi delay={0} label="Datasets evaluated" icon={<Layers className="h-4 w-4" />} sub={joinList(datasets)}>
-          <AnimatedNumber value={datasets.length} format={(v) => Math.round(v).toString()} />
+        <Kpi delay={0} label="Datasets evaluated" icon={<Layers className="h-4 w-4" />} sub={joinList(activeDatasets)}>
+          <AnimatedNumber value={activeDatasets.length} format={(v) => Math.round(v).toString()} />
         </Kpi>
-        <Kpi delay={0.04} label="Models benchmarked" accent="violet" icon={<Activity className="h-4 w-4" />} sub="Spark MLlib classifiers">
-          <AnimatedNumber value={models.length} format={(v) => Math.round(v).toString()} />
+        <Kpi delay={0.04} label="Models benchmarked" accent="violet" icon={<Activity className="h-4 w-4" />} sub={activeDatasets.length === 1 ? `Spark MLlib classifiers · ${activeDatasets[0]}` : 'Spark MLlib classifiers'}>
+          <AnimatedNumber value={scopedModels.length} format={(v) => Math.round(v).toString()} />
         </Kpi>
-        <Kpi delay={0.08} label="Completed evaluations" accent="blue" icon={<BarChart3 className="h-4 w-4" />} sub={`${benchmarks.rows.length} dataset × model results`}>
-          <AnimatedNumber value={rows.length} format={(v) => Math.round(v).toString()} />
+        <Kpi delay={0.08} label="Completed evaluations" accent="blue" icon={<BarChart3 className="h-4 w-4" />} sub={activeDatasets.length === 1 ? `${filteredRows.length} ${activeDatasets[0]} model results` : `${filteredRows.length} dataset × model results`}>
+          <AnimatedNumber value={filteredRows.length} format={(v) => Math.round(v).toString()} />
         </Kpi>
         <Kpi delay={0.12} label={`Best · ${METRICS[rankingMetric].label}`} accent="emerald" icon={<Crown className="h-4 w-4" />} sub={leaders.length > 1 ? leaders.map((l) => `${l.d}: ${l.entries[0].row.model}`).join(' · ') : leaders[0] ? `${leaders[0].d} · ${fmtPct(leaders[0].entries[0].value)}` : 'No valid values'}>
           <span className="text-[20px] leading-tight">{leaders.length ? joinList([...new Set(leaders.flatMap((l) => l.entries.map((e) => e.row.model)))]) : '—'}</span>
@@ -214,7 +217,7 @@ export default function Overview() {
       </section>
 
       {/* ---------------- Spotlight ---------------- */}
-      <Spotlight rows={rows} datasets={activeDatasets} metric={rankingMetric} />
+      <Spotlight rows={filteredRows} datasets={activeDatasets} metric={rankingMetric} />
 
       {/* ---------------- Charts A & C ---------------- */}
       <div className="grid gap-6 xl:grid-cols-2">

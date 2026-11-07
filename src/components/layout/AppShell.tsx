@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronsLeft, ChevronsRight, Menu, Moon, Presentation, Search, Sun, UploadCloud, X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useAppStore, toast } from '@/store/useAppStore';
@@ -257,6 +257,8 @@ function usePresentationMode() {
 export function AppShell() {
   useThemeClass();
   const location = useLocation();
+  // Captured per render so an exiting (animating-out) page keeps its own element instead of the new route.
+  const outlet = useOutlet();
   const navigate = useNavigate();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
@@ -272,11 +274,17 @@ export function AppShell() {
   const slides = NAV.filter((n) => n.slide);
   const slideIndex = slides.findIndex((s) => s.path === current.path);
 
-  useEffect(() => setMobileOpen(false), [location.pathname]);
+  // Effects use block bodies so they never implicitly return a value React would treat as a cleanup.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
   useEffect(() => {
     document.title = `${current.title} · SentinelX`;
   }, [current.title]);
-  useEffect(() => window.scrollTo({ top: 0 }), [location.pathname]);
+  useEffect(() => {
+    // Some browsers (e.g. Opera) / extensions patch scrollTo to return a Promise; don't return it.
+    window.scrollTo({ top: 0 });
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!presentation) return;
@@ -406,11 +414,9 @@ export function AppShell() {
         )}
 
         <main id="main" className={cn('mx-auto w-full px-4 py-6 md:px-6 md:py-8', presentation ? 'max-w-[1800px] text-[1.04em]' : 'max-w-[1500px]')}>
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}>
-              <Suspense fallback={<PageSkeleton />}>
-                <Outlet />
-              </Suspense>
+              <Suspense fallback={<PageSkeleton />}>{outlet}</Suspense>
             </motion.div>
           </AnimatePresence>
         </main>

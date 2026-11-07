@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Artifact, BenchmarkRow, ConfusionRow, DatasetMetadataEntry, DatasetView, MetricKey } from '@/types';
-import { DEMO_BENCHMARKS, DEMO_CONFUSION, DEMO_FILE_LABEL } from '@/data/demoData';
+import { DEMO_BENCHMARKS, DEMO_CONFUSION, DEMO_CONFUSION_FILE_LABEL, DEMO_FILE_LABEL, DEMO_METADATA, DEMO_METADATA_FILE_LABEL } from '@/data/demoData';
 import { DEFAULT_RANKING_METRIC, METRIC_KEYS } from '@/data/metrics';
 
 const STORAGE_KEY = 'sentinelx:v1';
@@ -46,8 +46,8 @@ export interface AppState extends PersistedState {
 
 const demoArtifacts = (): Pick<PersistedState, 'benchmarks' | 'confusion' | 'metadata'> => ({
   benchmarks: { source: 'demo', rows: DEMO_BENCHMARKS, fileName: DEMO_FILE_LABEL },
-  confusion: { source: 'demo', rows: DEMO_CONFUSION, fileName: DEMO_FILE_LABEL },
-  metadata: { source: null, rows: [] },
+  confusion: { source: 'demo', rows: DEMO_CONFUSION, fileName: DEMO_CONFUSION_FILE_LABEL },
+  metadata: { source: 'demo', rows: DEMO_METADATA, fileName: DEMO_METADATA_FILE_LABEL },
 });
 
 const empty = <T,>(): Artifact<T> => ({ source: null, rows: [] });
@@ -74,7 +74,19 @@ function load(): { state: PersistedState; error: string | null } {
     // Demo artifacts are always re-hydrated from source code so code fixes propagate.
     if (isArtifact(parsed.benchmarks)) state.benchmarks = parsed.benchmarks.source === 'demo' ? DEFAULTS.benchmarks : (parsed.benchmarks as Artifact<BenchmarkRow>);
     if (isArtifact(parsed.confusion)) state.confusion = parsed.confusion.source === 'demo' ? DEFAULTS.confusion : (parsed.confusion as Artifact<ConfusionRow>);
-    if (isArtifact(parsed.metadata)) state.metadata = parsed.metadata as Artifact<DatasetMetadataEntry>;
+    if (isArtifact(parsed.metadata)) {
+      const isOldDemoMetadataDefault =
+        parsed.metadata.source === null &&
+        parsed.metadata.rows.length === 0 &&
+        !parsed.metadata.fileName &&
+        !parsed.metadata.importedAt &&
+        parsed.benchmarks?.source === 'demo' &&
+        parsed.confusion?.source === 'demo';
+      state.metadata =
+        parsed.metadata.source === 'demo' || isOldDemoMetadataDefault
+          ? DEFAULTS.metadata
+          : (parsed.metadata as Artifact<DatasetMetadataEntry>);
+    }
     if (typeof parsed.datasetView === 'string') state.datasetView = parsed.datasetView;
     if (parsed.rankingMetric && METRIC_KEYS.includes(parsed.rankingMetric)) state.rankingMetric = parsed.rankingMetric;
     if (Array.isArray(parsed.visibleModels)) state.visibleModels = parsed.visibleModels.filter((m) => typeof m === 'string');
@@ -130,7 +142,7 @@ useAppStore.subscribe((s) => {
       // Demo rows are not stored verbatim — only a marker — keeping storage small.
       benchmarks: s.benchmarks.source === 'demo' ? { ...s.benchmarks, rows: [] } : s.benchmarks,
       confusion: s.confusion.source === 'demo' ? { ...s.confusion, rows: [] } : s.confusion,
-      metadata: s.metadata,
+      metadata: s.metadata.source === 'demo' ? { ...s.metadata, rows: [] } : s.metadata,
       datasetView: s.datasetView,
       rankingMetric: s.rankingMetric,
       visibleModels: s.visibleModels,

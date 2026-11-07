@@ -16,8 +16,8 @@ import { cn } from '@/utils/format';
 export function SourceBadge({ source, label }: { source: DataSource | null; label?: string }) {
   if (source === 'demo')
     return (
-      <Badge tone="amber" title="Built-in demonstration data from the project experiments">
-        <FlaskConical className="h-3 w-3" /> {label ? `${label}: ` : ''}Demo data
+      <Badge tone="amber" title="Bundled Databricks Spark MLlib experiment results">
+        <FlaskConical className="h-3 w-3" /> {label ? `${label}: ` : ''}Databricks Export
       </Badge>
     );
   if (source === 'imported')
@@ -136,21 +136,29 @@ export function GlobalMetricSelect({ id = 'global-metric' }: { id?: string }) {
 }
 
 /* ---------------- Metric label with tooltip ---------------- */
+/** Info tooltip for a metric. Renders a <button>, so never nest it inside another button. */
+export function MetricTip({ metric }: { metric: MetricKey }) {
+  const m = METRICS[metric];
+  return (
+    <InfoTip
+      label={`About ${m.label}`}
+      content={
+        <>
+          <span className="block font-semibold">{m.label}</span>
+          <span className="mt-1 block text-muted">{m.description}</span>
+          <span className="num mt-1.5 block text-[11px] text-cyan">{m.formula}</span>
+        </>
+      }
+    />
+  );
+}
+
 export function MetricLabel({ metric, className, short }: { metric: MetricKey; className?: string; short?: boolean }) {
   const m = METRICS[metric];
   return (
     <span className={cn('inline-flex items-center gap-1', className)}>
       {short ? m.short : m.label}
-      <InfoTip
-        label={`About ${m.label}`}
-        content={
-          <>
-            <span className="block font-semibold">{m.label}</span>
-            <span className="mt-1 block text-muted">{m.description}</span>
-            <span className="num mt-1.5 block text-[11px] text-cyan">{m.formula}</span>
-          </>
-        }
-      />
+      <MetricTip metric={metric} />
     </span>
   );
 }

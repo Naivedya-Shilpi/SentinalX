@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Boxes, Database, FileText, Layers, Tags } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
@@ -48,9 +48,18 @@ function Distribution({ label, dist }: { label: string; dist?: ClassDistribution
 export default function DatasetExplorer() {
   const { datasets: loaded } = useBenchmarkData();
   const metadata = useAppStore((s) => s.metadata);
+  const globalView = useAppStore((s) => s.datasetView);
+  const setDatasetView = useAppStore((s) => s.setDatasetView);
   const names = useMemo(() => [...new Set([...DATASETS.map((d) => d.name), ...loaded])], [loaded]);
-  const [sel, setSel] = useState(names[0]);
+  const [sel, setSel] = useState(() => (names.includes(globalView) ? globalView : names[0]));
+  useEffect(() => {
+    if (names.includes(globalView)) setSel(globalView);
+  }, [globalView, names]);
   const name = names.includes(sel) ? sel : names[0];
+  const handleSelectDataset = (nextName: string) => {
+    setSel(nextName);
+    if (globalView !== 'both' && loaded.includes(nextName)) setDatasetView(nextName);
+  };
   const info = getDatasetInfo(name);
   const meta = metadata.rows.find((m) => m.dataset === name);
   const evaluated = loaded.includes(name);
@@ -61,7 +70,7 @@ export default function DatasetExplorer() {
         eyebrow="Data sources"
         title="Dataset Explorer"
         description="The two datasets have different feature schemas, so models are trained and evaluated independently on each one."
-        actions={<DatasetPicker value={name} onChange={setSel} datasets={names} />}
+        actions={<DatasetPicker value={name} onChange={handleSelectDataset} datasets={names} />}
       />
 
       {info ? (
@@ -119,8 +128,14 @@ export default function DatasetExplorer() {
                 <h3 className="label-xs mb-3 mt-6">Class distribution</h3>
                 {meta && (meta.train || meta.test) ? (
                   <div className="space-y-5">
-                    <Distribution label="Training set" dist={meta.train} />
-                    <Distribution label="Test set" dist={meta.test} />
+                    {meta.train ? (
+                      <Distribution label="Training set (imported metadata)" dist={meta.train} />
+                    ) : (
+                      <div className="rounded-xl border border-line/10 bg-surface-2/40 p-3 text-xs text-muted">
+                        <span className="font-medium text-fg">Training set ({fmtInt(info.trainRecords)} documented records):</span> Per-class training counts are not part of the test evaluation CSV exports and are never mixed with test-set counts.
+                      </div>
+                    )}
+                    <Distribution label={metadata.source === 'demo' ? 'Test set (derived from Databricks confusion matrix)' : 'Test set'} dist={meta.test} />
                     {meta.train && meta.train.normal + meta.train.attack !== info.trainRecords && (
                       <Callout tone="warning">Imported training counts ({fmtInt(meta.train.normal + meta.train.attack)}) differ from the documented {fmtInt(info.trainRecords)} records.</Callout>
                     )}

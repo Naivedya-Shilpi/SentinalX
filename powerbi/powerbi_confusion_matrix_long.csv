@@ -1,0 +1,41 @@
+Dataset,Model,Quadrant,Quadrant_Name,Actual_Class,Predicted_Class,Outcome_Category,Record_Count,Test_Set_Total,Share_Of_Test_Set,Share_Of_Actual_Class
+NSL-KDD,Gradient-Boosted Trees,TN,True Negative,Normal,Normal,Correct Classification,9442,22544,0.418825,0.972299
+NSL-KDD,Gradient-Boosted Trees,FP,False Positive,Normal,Attack,Misclassification,269,22544,0.011932,0.027701
+NSL-KDD,Gradient-Boosted Trees,FN,False Negative,Attack,Normal,Misclassification,4261,22544,0.189008,0.332035
+NSL-KDD,Gradient-Boosted Trees,TP,True Positive,Attack,Attack,Correct Classification,8572,22544,0.380234,0.667965
+NSL-KDD,Random Forest,TN,True Negative,Normal,Normal,Correct Classification,9431,22544,0.418337,0.971167
+NSL-KDD,Random Forest,FP,False Positive,Normal,Attack,Misclassification,280,22544,0.01242,0.028833
+NSL-KDD,Random Forest,FN,False Negative,Attack,Normal,Misclassification,4827,22544,0.214115,0.37614
+NSL-KDD,Random Forest,TP,True Positive,Attack,Attack,Correct Classification,8006,22544,0.355128,0.62386
+NSL-KDD,Naive Bayes,TN,True Negative,Normal,Normal,Correct Classification,9445,22544,0.418958,0.972608
+NSL-KDD,Naive Bayes,FP,False Positive,Normal,Attack,Misclassification,266,22544,0.011799,0.027392
+NSL-KDD,Naive Bayes,FN,False Negative,Attack,Normal,Misclassification,5190,22544,0.230216,0.404426
+NSL-KDD,Naive Bayes,TP,True Positive,Attack,Attack,Correct Classification,7643,22544,0.339026,0.595574
+NSL-KDD,Logistic Regression,TN,True Negative,Normal,Normal,Correct Classification,8990,22544,0.398776,0.925754
+NSL-KDD,Logistic Regression,FP,False Positive,Normal,Attack,Misclassification,721,22544,0.031982,0.074246
+NSL-KDD,Logistic Regression,FN,False Negative,Attack,Normal,Misclassification,4869,22544,0.215978,0.379412
+NSL-KDD,Logistic Regression,TP,True Positive,Attack,Attack,Correct Classification,7964,22544,0.353265,0.620588
+NSL-KDD,Linear SVC,TN,True Negative,Normal,Normal,Correct Classification,8992,22544,0.398864,0.92596
+NSL-KDD,Linear SVC,FP,False Positive,Normal,Attack,Misclassification,719,22544,0.031893,0.07404
+NSL-KDD,Linear SVC,FN,False Negative,Attack,Normal,Misclassification,5046,22544,0.223829,0.393205
+NSL-KDD,Linear SVC,TP,True Positive,Attack,Attack,Correct Classification,7787,22544,0.345413,0.606795
+UNSW-NB15,Gradient-Boosted Trees,TN,True Negative,Normal,Normal,Correct Classification,22616,82332,0.274693,0.611243
+UNSW-NB15,Gradient-Boosted Trees,FP,False Positive,Normal,Attack,Misclassification,14384,82332,0.174707,0.388757
+UNSW-NB15,Gradient-Boosted Trees,FN,False Negative,Attack,Normal,Misclassification,409,82332,0.004968,0.009022
+UNSW-NB15,Gradient-Boosted Trees,TP,True Positive,Attack,Attack,Correct Classification,44923,82332,0.545632,0.990978
+UNSW-NB15,Random Forest,TN,True Negative,Normal,Normal,Correct Classification,21162,82332,0.257033,0.571946
+UNSW-NB15,Random Forest,FP,False Positive,Normal,Attack,Misclassification,15838,82332,0.192367,0.428054
+UNSW-NB15,Random Forest,FN,False Negative,Attack,Normal,Misclassification,265,82332,0.003219,0.005846
+UNSW-NB15,Random Forest,TP,True Positive,Attack,Attack,Correct Classification,45067,82332,0.547381,0.994154
+UNSW-NB15,Logistic Regression,TN,True Negative,Normal,Normal,Correct Classification,21398,82332,0.259899,0.578324
+UNSW-NB15,Logistic Regression,FP,False Positive,Normal,Attack,Misclassification,15602,82332,0.189501,0.421676
+UNSW-NB15,Logistic Regression,FN,False Negative,Attack,Normal,Misclassification,1914,82332,0.023247,0.042222
+UNSW-NB15,Logistic Regression,TP,True Positive,Attack,Attack,Correct Classification,43418,82332,0.527353,0.957778
+UNSW-NB15,Linear SVC,TN,True Negative,Normal,Normal,Correct Classification,20872,82332,0.25351,0.564108
+UNSW-NB15,Linear SVC,FP,False Positive,Normal,Attack,Misclassification,16128,82332,0.19589,0.435892
+UNSW-NB15,Linear SVC,FN,False Negative,Attack,Normal,Misclassification,1639,82332,0.019907,0.036155
+UNSW-NB15,Linear SVC,TP,True Positive,Attack,Attack,Correct Classification,43693,82332,0.530693,0.963845
+UNSW-NB15,Naive Bayes,TN,True Negative,Normal,Normal,Correct Classification,33175,82332,0.402942,0.896622
+UNSW-NB15,Naive Bayes,FP,False Positive,Normal,Attack,Misclassification,3825,82332,0.046458,0.103378
+UNSW-NB15,Naive Bayes,FN,False Negative,Attack,Normal,Misclassification,14927,82332,0.181303,0.329282
+UNSW-NB15,Naive Bayes,TP,True Positive,Attack,Attack,Correct Classification,30405,82332,0.369297,0.670718

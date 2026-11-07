@@ -1,0 +1,5 @@
+Dataset,Split,Source_File,Total_Records,Normal_Records,Attack_Records,Normal_Share,Attack_Share,Raw_Column_Count,Engineered_Feature_Dim,Distinct_Attack_Subtypes,Models_Evaluated_On_Split,Model_Record_Evaluations
+UNSW-NB15,Train,UNSW_NB15_training-set.parquet,175341,56000,119341,0.319378,0.680622,36,171,9,0,0
+UNSW-NB15,Test,UNSW_NB15_testing-set.parquet,82332,37000,45332,0.4494,0.5506,36,171,9,5,411660
+NSL-KDD,Train,KDDTrain+.txt,125973,67343,58630,0.534583,0.465417,43,122,22,0,0
+NSL-KDD,Test,KDDTest+.txt,22544,9711,12833,0.430758,0.569242,43,122,37,5,112720
