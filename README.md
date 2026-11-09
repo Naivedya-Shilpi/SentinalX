@@ -299,12 +299,16 @@ All metrics below come directly from `src/data/final_benchmarks.csv` and `src/da
 
 ## 12. Power BI Dashboard Setup & Instructions
 
-All Power BI artifacts reside in `powerbi/` (see [`powerbi/README.md`](powerbi/README.md) for the complete column dictionary and relationship guide):
+All Power BI artifacts reside in `powerbi/` (see [`powerbi/README.md`](powerbi/README.md) for the complete column dictionary, relationship model, and visual breakdown):
 
-1. **Open the Existing Report:**
-   - Open `powerbi/SentinelX_PowerBI.pbix` in **Microsoft Power BI Desktop**.
-2. **Import or Refresh the Six CSV Tables:**
-   - If building a new view or updating file paths in Power BI Desktop, use **Home → Get Data → Text/CSV** (or **Transform Data → Data source settings**) and point to the six CSV exports in `powerbi/`:
+1. **Open the Completed 4-Page Report (`powerbi/SentinelX_PowerBI.pbix`, `199,987` bytes):**
+   - Open `powerbi/SentinelX_PowerBI.pbix` in **Microsoft Power BI Desktop**. It contains four completed `1920 × 1080` report pages (34 visuals total) backed by a 9-table data model (`DimDataset`, `DimSplit`, `DimModel`, and the 6 analytical CSV tables):
+     1. **`Executive Overview`:** Dataset slicer, 4 KPI cards (`Total Dataset Records`, `Unique Test Records`, `Total Model-Record Evaluations`, `Average Accuracy`), `Model Accuracy Comparison` bar chart, and `Model Performance Leaderboard` table.
+     2. **`Confusion Matrix Lab`:** Dataset & Model slicers, 2×2 `Confusion Matrix` (`Actual_Class` × `Predicted_Class`), and `Model Error Rate Comparison` bar chart.
+     3. **`Threat Taxonomy`:** Dataset & Split slicers, 4 KPI cards (`Records in Selected Split`, `Normal Records in Selected Split`, `Attack Records in Selected Split`, `Unique Attack Subtypes`), `Normal vs Attack Distribution by Dataset Split` column chart, `Most Frequently Observed Attack Subtypes` bar chart, and `Test-Only Attack Subtypes Absent from Training` bar chart (`Unseen_In_Training = true`).
+     4. **`Network Vector Intelligence`:** Dataset & Split slicers, 4 KPI cards (`Total Network Records`, `Distinct Protocols`, `Distinct Services`, `Distinct Connection States`), `Network Protocol Distribution` bar chart, `Most Frequently Observed Application Services` bar chart, `Connection State Distribution` donut chart, and `Source Traffic Volume by Attack Subtype` (`Total_Src_Bytes`) bar chart.
+2. **Refreshing the Six CSV Tables on Another Windows Machine:**
+   - If updating file paths in Power BI Desktop, use **Home → Transform data → Data source settings → Change Source** and point to the six CSV exports in `powerbi/`:
      - `powerbi/powerbi_model_benchmarks.csv` (`10` rows)
      - `powerbi/powerbi_confusion_matrix_long.csv` (`40` rows)
      - `powerbi/powerbi_dataset_split_summary.csv` (`4` rows — `406,190` total dataset records, `104,876` unique test records, `524,380` total model-record evaluations)

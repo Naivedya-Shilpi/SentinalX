@@ -14,8 +14,8 @@ This directory contains six verified CSV datasets and documentation for building
 | `powerbi_attack_taxonomy.csv` | 81 | 15 | 8,252 | `(Dataset, Split, Attack_Subtype)` | Multi-class attack subtype distribution preserving the exact original dataset labels (`attack_cat` in UNSW-NB15 and `label` in NSL-KDD) and flagging subtypes that occur in the test split but not in the training split (`Unseen_In_Training`). |
 | `powerbi_network_vectors.csv` | 2,840 | 14 | 203,589 | `(Dataset, Split, Protocol, Service, Connection_State, Attack_Subtype)` | Multi-dimensional network traffic aggregation by protocol, application service, connection state/flag, and attack subtype for decomposition trees and protocol/service matrices. |
 | `powerbi_nslkdd_difficulty.csv` | 44 | 10 | 2,710 | `(Dataset, Split, Difficulty_Level)` | Descriptive distribution of `Normal` and `Attack` records across NSL-KDD `difficulty_level` (`0`–`21`) in `KDDTrain+` and `KDDTest+`. |
-| `generate_powerbi_exports.py` | — | — | — | Python Script | Reproducible generator and validator script that builds all six CSV files above from `src/data/*.csv` and `datasets/`. |
-| `SentinelX_PowerBI.pbix` | — | — | 171,156 | Power BI Report | Saved Power BI Desktop report file containing the imported data model and report views. |
+| `generate_powerbi_exports.py` | — | — | 14,107 | Python Script | Reproducible generator and validator script that builds all six CSV files above from `src/data/*.csv` and `datasets/`. |
+| `SentinelX_PowerBI.pbix` | 4 Pages | 34 Visuals | 199,987 | Power BI Report | Completed 4-page Power BI Desktop report (`Executive Overview`, `Confusion Matrix Lab`, `Threat Taxonomy`, `Network Vector Intelligence`). |
 
 ---
 
@@ -113,53 +113,81 @@ This directory contains six verified CSV datasets and documentation for building
 
 ---
 
-## 3. Importing into Power BI & Recommended Data Model Relationships
+## 3. Importing, Refreshing & Data Model Architecture in `SentinelX_PowerBI.pbix`
 
-### 3.1 Step-by-Step Import Instructions
-1. Open **Power BI Desktop**.
-2. Click **Home → Get Data → Text/CSV** and import all six CSV files from the `powerbi/` folder using **UTF-8** encoding and **First row as headers** (Power Query will automatically detect headers, integer/decimal types, and boolean `True`/`False` values).
-3. In **Power Query Editor**, verify that percentage/rate columns (`Accuracy`, `Weighted_F1`, `Attack_F1`, `FPR`, `FNR`, `Specificity`, `NPV`, `Balanced_Accuracy`, `Error_Rate`, `Share_Of_Split`, etc.) are set to **Decimal Number** and formatted as **Percentage** (`0.00%`) in the Report view.
+### 3.1 Opening & Refreshing the Completed `.pbix` Report on Another Windows Machine
+1. Open `powerbi/SentinelX_PowerBI.pbix` (`199,987` bytes) in **Microsoft Power BI Desktop**.
+2. The report already embeds the imported data model and all 4 completed report pages, so it can be viewed and sliced immediately offline without refreshing.
+3. If you regenerate the CSV exports via `python powerbi/generate_powerbi_exports.py` or move the project folder to a different path on another Windows machine and want to click **Refresh**:
+   - In Power BI Desktop, go to **Home → Transform data → Data source settings**.
+   - Select each CSV source (`powerbi_model_benchmarks.csv`, `powerbi_confusion_matrix_long.csv`, `powerbi_dataset_split_summary.csv`, `powerbi_attack_taxonomy.csv`, `powerbi_network_vectors.csv`, `powerbi_nslkdd_difficulty.csv`), click **Change Source...**, and browse to your local `powerbi/` directory.
+   - Click **Close & Apply**, then click **Refresh**.
 
-### 3.2 Recommended Relationships (Star / Bridge Schema)
-Because Power BI relationships require a single-column key per link, use either a 2-row `Dim_Dataset` table (`UNSW-NB15`, `NSL-KDD`) or the following calculated composite keys in DAX / Power Query:
+### 3.2 Data Model Tables & Relationships (`DiagramLayout`)
+The `SentinelX_PowerBI.pbix` data model contains **9 tables** (6 imported analytical CSV tables + 3 dimension tables):
 
-1. **Model Evaluation Link (`1:Many` from `powerbi_model_benchmarks` to `powerbi_confusion_matrix_long`):**
-   - Create a calculated column in both tables:
-     `Dataset_Model_Key = [Dataset] & " | " & [Model]`
-   - Relate `powerbi_model_benchmarks[Dataset_Model_Key]` (`1`) $\rightarrow$ `powerbi_confusion_matrix_long[Dataset_Model_Key]` (`*`, Single/Both filter direction).
-2. **Dataset Split Link (`1:Many` from `powerbi_dataset_split_summary` to dataset-level tables):**
-   - Create a calculated column in `powerbi_dataset_split_summary`, `powerbi_attack_taxonomy`, `powerbi_network_vectors`, and `powerbi_nslkdd_difficulty`:
-     `Dataset_Split_Key = [Dataset] & " | " & [Split]`
-   - Relate:
-     - `powerbi_dataset_split_summary[Dataset_Split_Key]` (`1`) $\rightarrow$ `powerbi_attack_taxonomy[Dataset_Split_Key]` (`*`)
-     - `powerbi_dataset_split_summary[Dataset_Split_Key]` (`1`) $\rightarrow$ `powerbi_network_vectors[Dataset_Split_Key]` (`*`)
-     - `powerbi_dataset_split_summary[Dataset_Split_Key]` (`1`) $\rightarrow$ `powerbi_nslkdd_difficulty[Dataset_Split_Key]` (`*`)
-3. **Attack Subtype Link (`1:Many` from `powerbi_attack_taxonomy` to `powerbi_network_vectors`):**
-   - Create a calculated column in both tables:
-     `Taxonomy_Key = [Dataset] & " | " & [Split] & " | " & [Attack_Subtype]`
-   - Relate `powerbi_attack_taxonomy[Taxonomy_Key]` (`1`) $\rightarrow$ `powerbi_network_vectors[Taxonomy_Key]` (`*`).
+- **Dimension Tables (3):**
+  - `DimDataset` (`Dataset`: `UNSW-NB15`, `NSL-KDD`) — also hosts top-level summary measures (`Total Dataset Records`, `Unique Test Records`, `Total Model-Record Evaluations`, `Average Accuracy`).
+  - `DimSplit` (`Split`: `Train`, `Test`).
+  - `DimModel` (`Model`: `Logistic Regression`, `Random Forest`, `Linear SVC`, `Gradient-Boosted Trees`, `Naive Bayes`).
+- **Fact / Analytical CSV Tables (6):**
+  - `powerbi_model_benchmarks`
+  - `powerbi_confusion_matrix_long`
+  - `powerbi_dataset_split_summary`
+  - `powerbi_attack_taxonomy` (includes DAX measure `Distinct Attack Subtypes` using a distinct count over attack subtypes)
+  - `powerbi_network_vectors`
+  - `powerbi_nslkdd_difficulty`
+- **Dimension-to-Fact Filtering Strategy:**
+  - Single-direction (`1:*`) relationships from `DimDataset`, `DimSplit`, and `DimModel` filter the model evaluation and taxonomy tables on Pages 1–3 cleanly without many-to-many ambiguity.
+  - On Page 4 (`Network Vector Intelligence`), slicers bind directly to `powerbi_network_vectors[Dataset]` and `powerbi_network_vectors[Split]` so all protocol, service, connection-state, and byte-volume visuals filter directly within `powerbi_network_vectors` without any ambiguous relationship path.
 
 ---
 
-## 4. Recommended 4-Page Power BI Layout
+## 4. Completed 4-Page Power BI Report Structure (`SentinelX_PowerBI.pbix`)
 
-1. **Page 1 — Executive Benchmark & Model Leaderboard**
-   - **KPI Cards:**
-     - Total Dataset Records Analyzed: `406,190` (`SUM(powerbi_dataset_split_summary[Total_Records])`)
-     - Unique Test Records: `104,876` (`CALCULATE(SUM(powerbi_dataset_split_summary[Total_Records]), powerbi_dataset_split_summary[Split] = "Test")`)
-     - Total Model-Record Evaluations: `524,380` (`SUM(powerbi_dataset_split_summary[Model_Record_Evaluations])` — `104,876` unique test records evaluated across 5 models)
-     - **UNSW-NB15 Verified Leaders:** Best Accuracy (`Gradient-Boosted Trees`, `82.03%`), Best Attack F1 (`Gradient-Boosted Trees`, `85.86%`), Best Weighted F1 (`Gradient-Boosted Trees`, `81.14%`), Best Attack Recall (`Random Forest`, `99.42%`), Best AUC-ROC (`Gradient-Boosted Trees`, `97.20%`).
-     - **NSL-KDD Verified Leaders:** Best Accuracy (`Gradient-Boosted Trees`, `79.91%`), Best Attack F1 (`Gradient-Boosted Trees`, `79.10%`), Best Weighted F1 (`Gradient-Boosted Trees`, `79.77%`), Best AUC-ROC (`Random Forest`, `95.12%`).
-   - **Visuals:** Clustered Bar Chart of all 5 models by `Weighted_F1`, `Attack_F1`, `Accuracy`, and `AUC_ROC`; Multi-Metric Leaderboard Table with rank columns.
+All four pages use a `1920 × 1080` (`FitToPage`) dark theme (`#0B1220`):
 
-2. **Page 2 — Confusion Matrix & Error Triage Lab**
-   - **Visuals:** 2×2 Matrix (`Actual_Class` on Rows, `Predicted_Class` on Columns, `Record_Count` and `Share_Of_Test_Set` on Values); Stacked Bar Chart of `FP` vs. `FN` misclassifications by model; Scatter Plot of `FPR` vs. `Attack_Recall`; Diagnostic KPI Cards for `MCC`, `Balanced_Accuracy`, `Specificity`, `NPV`, and `Error_Rate`.
+1. **Page 1 — `Executive Overview` (8 Visuals)**
+   - **Title Banner:** `SENTINELX — NETWORK THREAT INTELLIGENCE & ANALYTICS`
+   - **Slicer:** `DimDataset[Dataset]` (`UNSW-NB15` / `NSL-KDD`)
+   - **4 KPI Cards:**
+     - `Total Dataset Records` (`406,190` across both datasets; `257,673` UNSW-NB15; `148,517` NSL-KDD)
+     - `Unique Test Records` (`104,876` total; `82,332` UNSW-NB15; `22,544` NSL-KDD)
+     - `Total Model-Record Evaluations` (`524,380` total — `104,876` unique test records evaluated across 5 models)
+     - `Average Accuracy` (`Average(powerbi_model_benchmarks[Accuracy])`)
+   - **Clustered Bar Chart (`MODEL ACCURACY COMPARISON`):** `Model` × `Dataset` by `Average(Accuracy)`.
+   - **Table (`MODEL PERFORMANCE LEADERBOARD`):** `Dataset`, `Model`, `Accuracy`, `Weighted_F1`, `Attack_Precision`, `Attack_Recall`, `Attack_F1`, and `AUC_ROC` (reflecting the verified Databricks leaders: `Gradient-Boosted Trees` on `UNSW-NB15` with `82.03%` Accuracy / `81.14%` Weighted F1 / `85.86%` Attack F1 / `97.20%` AUC-ROC and `Random Forest` with `99.42%` Attack Recall; `Gradient-Boosted Trees` on `NSL-KDD` with `79.91%` Accuracy / `79.77%` Weighted F1 / `79.10%` Attack F1 and `Random Forest` with `95.12%` AUC-ROC).
 
-3. **Page 3 — Threat Taxonomy & Dataset Split Composition**
-   - **Visuals:** Train vs. Test class balance bar chart; `Attack_Subtype` distribution chart; Slicer/Filter on `Unseen_In_Training` (`True`/`False`) to inspect the 17 **attack subtypes present in the test split but absent from the training split** (`3,750` records in `KDDTest+`); and an independent descriptive histogram of `NSL-KDD` `Difficulty_Level` (`0`–`21`) distributions across `Train` and `Test`.
+2. **Page 2 — `Confusion Matrix Lab` (5 Visuals)**
+   - **Title Banner:** `CONFUSION MATRIX LAB`
+   - **2 Slicers:** `DimDataset[Dataset]` and `DimModel[Model]`
+   - **2×2 Matrix (`CONFUSION MATRIX`):** `Actual_Class` (`Normal`, `Attack`) on Rows × `Predicted_Class` (`Normal`, `Attack`) on Columns × `SUM(powerbi_confusion_matrix_long[Record_Count])` on Values.
+   - **Clustered Bar Chart (`MODEL ERROR RATE COMPARISON`):** `Model` × `Dataset` by `Average(powerbi_model_benchmarks[Error_Rate])`.
 
-4. **Page 4 — Network Vector & Protocol Surface Intelligence**
-   - **Visuals:** Decomposition Tree (`Dataset` → `Protocol` → `Service` → `Connection_State` → `Attack_Subtype` by `Record_Count`); Matrix of `Service` × `Connection_State` colored by Attack record share; Bar Chart of **Most Frequently Observed Application Services** (`-`, `dns`, `http`, `private`, `domain_u`, `smtp`, `ftp-data`, `ecr_i`, etc.); and a **Data Provenance Note** explaining the absence of geographic fields in the benchmark datasets.
+3. **Page 3 — `Threat Taxonomy` (10 Visuals)**
+   - **Title Banner:** `THREAT TAXONOMY & DATASET COMPOSITION`
+   - **2 Slicers:** `DimDataset[Dataset]` and `DimSplit[Split]` (`Train` / `Test`)
+   - **4 KPI Cards:**
+     - `RECORDS IN SELECTED SPLIT` (`SUM(powerbi_dataset_split_summary[Total_Records])`)
+     - `NORMAL RECORDS IN SELECTED SPLIT` (`SUM(powerbi_dataset_split_summary[Normal_Records])`)
+     - `ATTACK RECORDS IN SELECTED SPLIT` (`SUM(powerbi_dataset_split_summary[Attack_Records])`)
+     - `UNIQUE ATTACK SUBTYPES` (`powerbi_attack_taxonomy[Distinct Attack Subtypes]`)
+   - **Clustered Column Chart (`NORMAL VS ATTACK DISTRIBUTION BY DATASET SPLIT`):** `Split` on X-axis comparing `SUM(Normal_Records)` and `SUM(Attack_Records)`.
+   - **Clustered Bar Chart (`MOST FREQUENTLY OBSERVED ATTACK SUBTYPES`):** `Attack_Subtype` by `SUM(powerbi_attack_taxonomy[Record_Count])`, filtered to `Traffic_Class = 'Attack'`.
+   - **Clustered Bar Chart (`TEST-ONLY ATTACK SUBTYPES ABSENT FROM TRAINING`):** `Attack_Subtype` by `SUM(powerbi_attack_taxonomy[Record_Count])`, filtered to `Traffic_Class = 'Attack'` and `Unseen_In_Training = true` (`17` NSL-KDD test-split subtypes totaling `3,750` records).
+
+4. **Page 4 — `Network Vector Intelligence` (11 Visuals)**
+   - **Title Banner:** `NETWORK VECTOR & PROTOCOL SURFACE INTELLIGENCE`
+   - **2 Slicers:** `powerbi_network_vectors[Dataset]` and `powerbi_network_vectors[Split]`
+   - **4 KPI Cards:**
+     - `Total Network Records` (`SUM(powerbi_network_vectors[Record_Count])`)
+     - `Distinct Protocols` (`DISTINCTCOUNT(powerbi_network_vectors[Protocol])`)
+     - `Distinct Services` (`DISTINCTCOUNT(powerbi_network_vectors[Service])`)
+     - `Distinct Connection States` (`DISTINCTCOUNT(powerbi_network_vectors[Connection_State])`)
+   - **Clustered Bar Chart (`NETWORK PROTOCOL DISTRIBUTION`):** `Protocol` by `SUM(Record_Count)`.
+   - **Clustered Bar Chart (`MOST FREQUENTLY OBSERVED APPLICATION SERVICES`):** `Service` by `SUM(Record_Count)`.
+   - **Donut Chart (`CONNECTION STATE DISTRIBUTION`):** `Connection_State` by `SUM(Record_Count)`.
+   - **Clustered Bar Chart (`SOURCE TRAFFIC VOLUME BY ATTACK SUBTYPE`):** `Attack_Subtype` by `SUM(Total_Src_Bytes)`, filtered to `Traffic_Class = 'Attack'`.
 
 ---
 
