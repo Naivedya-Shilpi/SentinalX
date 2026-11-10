@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { datasetOrder } from '@/data/datasets';
+import { DATASETS, datasetOrder } from '@/data/datasets';
 import { modelOrder } from '@/data/models';
 import type { BenchmarkRow, ConfusionRow } from '@/types';
 
@@ -26,13 +26,19 @@ export interface BenchmarkData {
 export function useBenchmarkData(): BenchmarkData {
   const benchmarks = useAppStore((s) => s.benchmarks);
   const confusion = useAppStore((s) => s.confusion);
+  const metadata = useAppStore((s) => s.metadata);
   const datasetView = useAppStore((s) => s.datasetView);
   const visibleModels = useAppStore((s) => s.visibleModels);
 
   return useMemo(() => {
     const rows = benchmarks.rows;
     const confusionRows = confusion.rows;
-    const datasets = unique(rows.map((r) => r.dataset)).sort((a, b) => datasetOrder(a) - datasetOrder(b) || a.localeCompare(b));
+    const loadedDatasets = unique([
+      ...rows.map((r) => r.dataset),
+      ...confusionRows.map((r) => r.dataset),
+      ...metadata.rows.map((r) => r.dataset),
+    ]).sort((a, b) => datasetOrder(a) - datasetOrder(b) || a.localeCompare(b));
+    const datasets = loadedDatasets.length > 0 ? loadedDatasets : DATASETS.map((d) => d.name);
     const models = unique(rows.map((r) => r.model)).sort((a, b) => modelOrder(a) - modelOrder(b) || a.localeCompare(b));
     const activeDatasets = datasetView === 'both' || !datasets.includes(datasetView) ? datasets : [datasetView];
     const vis = visibleModels.filter((m) => models.includes(m));
@@ -54,5 +60,5 @@ export function useBenchmarkData(): BenchmarkData {
       getRow: (d, m) => rowIndex.get(`${d}|${m}`),
       getConfusion: (d, m) => cmIndex.get(`${d}|${m}`),
     };
-  }, [benchmarks, confusion, datasetView, visibleModels]);
+  }, [benchmarks, confusion, metadata, datasetView, visibleModels]);
 }

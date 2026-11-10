@@ -1,23 +1,27 @@
-import { Component, lazy, type ErrorInfo, type ReactNode } from 'react';
-import { Link, Route, Routes } from 'react-router-dom';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Link, Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { EmptyState } from '@/components/ui/Feedback';
 import { Button } from '@/components/ui/Button';
 import { AlertTriangle, Compass } from 'lucide-react';
+import Overview from '@/pages/Overview';
+import Leaderboard from '@/pages/Leaderboard';
+import Comparison from '@/pages/Comparison';
+import DatasetExplorer from '@/pages/DatasetExplorer';
+import ConfusionLab from '@/pages/ConfusionLab';
+import Insights from '@/pages/Insights';
+import Methodology from '@/pages/Methodology';
+import DataImport from '@/pages/DataImport';
 
-const Overview = lazy(() => import('@/pages/Overview'));
-const Leaderboard = lazy(() => import('@/pages/Leaderboard'));
-const Comparison = lazy(() => import('@/pages/Comparison'));
-const DatasetExplorer = lazy(() => import('@/pages/DatasetExplorer'));
-const ConfusionLab = lazy(() => import('@/pages/ConfusionLab'));
-const Insights = lazy(() => import('@/pages/Insights'));
-const Methodology = lazy(() => import('@/pages/Methodology'));
-const DataImport = lazy(() => import('@/pages/DataImport'));
-
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+class ErrorBoundary extends Component<{ resetKey?: string; children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
   static getDerivedStateFromError(error: Error) {
     return { error };
+  }
+  componentDidUpdate(prevProps: { resetKey?: string }) {
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    }
   }
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('SentinelX render error', error, info.componentStack);
@@ -55,8 +59,9 @@ function NotFound() {
 }
 
 export default function App() {
+  const location = useLocation();
   return (
-    <ErrorBoundary>
+    <ErrorBoundary resetKey={location.pathname}>
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<Overview />} />

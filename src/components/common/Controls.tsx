@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { motion } from 'framer-motion';
 import { Database, FlaskConical, CircleOff } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useBenchmarkData } from '@/hooks/useBenchmarkData';
@@ -42,11 +41,8 @@ export function ActiveSource({ kind = 'benchmarks' }: { kind?: 'benchmarks' | 'c
 /* ---------------- Page header ---------------- */
 export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: ReactNode; actions?: ReactNode }) {
   return (
-    <motion.header
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="mb-6 flex flex-wrap items-end justify-between gap-4"
+    <header
+      className="page-enter mb-6 flex flex-wrap items-end justify-between gap-4"
     >
       <div className="min-w-0 max-w-3xl">
         {eyebrow && <p className="label-xs mb-2 text-cyan/90">{eyebrow}</p>}
@@ -54,7 +50,7 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
         {description && <p className="mt-2 text-sm leading-relaxed text-muted">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
-    </motion.header>
+    </header>
   );
 }
 

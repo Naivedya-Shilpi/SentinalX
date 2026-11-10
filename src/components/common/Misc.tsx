@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Database } from 'lucide-react';
 import { EmptyState } from '@/components/ui/Feedback';
 import { UploadCloud } from 'lucide-react';
+import { cn } from '@/utils/format';
 
 /** Standard empty state when no benchmark rows exist. */
 export function NoDataState() {
@@ -22,9 +22,9 @@ export function NoDataState() {
 
 export function Stagger({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }} className={className}>
+    <div className={cn('page-enter', className)} style={delay ? { animationDelay: `${delay}s` } : undefined}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 

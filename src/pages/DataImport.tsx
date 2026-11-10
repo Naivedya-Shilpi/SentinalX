@@ -22,7 +22,8 @@ interface Report {
 const BENCH_HEADER = ['Dataset', 'Model', ...METRIC_KEYS.map((k) => METRICS[k].csvColumn)].join(',');
 
 function UploadCard({ kind, title, description, schema, accept, icon, optional }: { kind: Kind; title: string; description: string; schema: string; accept: string[]; icon: React.ReactNode; optional?: boolean }) {
-  const artifact = useAppStore((s) => s[kind]) as Artifact<unknown>;
+  const artifact = useAppStore((s) => s[kind]) as Artifact<{ dataset?: string }>;
+  const datasetView = useAppStore((s) => s.datasetView);
   const importBenchmarks = useAppStore((s) => s.importBenchmarks);
   const importConfusion = useAppStore((s) => s.importConfusion);
   const importMetadata = useAppStore((s) => s.importMetadata);
@@ -70,6 +71,8 @@ function UploadCard({ kind, title, description, schema, accept, icon, optional }
   const errors = report?.result.issues.filter((i) => i.level === 'error') ?? [];
   const warnings = report?.result.issues.filter((i) => i.level === 'warning') ?? [];
   const loaded = artifact.rows.length > 0;
+  const scopedCount = datasetView === 'both' ? artifact.rows.length : artifact.rows.filter((r) => r.dataset === datasetView).length;
+  const scopeLabel = datasetView === 'both' ? 'Compare Both' : datasetView;
 
   return (
     <Card>
@@ -98,8 +101,16 @@ function UploadCard({ kind, title, description, schema, accept, icon, optional }
 
         <dl className="grid grid-cols-2 gap-3 text-[13px]">
           <div className="rounded-lg border border-line/10 p-3"><dt className="label-xs">Active file</dt><dd className="mt-1 break-words">{loaded ? artifact.fileName ?? '—' : 'None'}</dd></div>
-          <div className="rounded-lg border border-line/10 p-3"><dt className="label-xs">Rows loaded</dt><dd className="num mt-1">{fmtInt(artifact.rows.length)}</dd></div>
-          <div className="col-span-2 rounded-lg border border-line/10 p-3"><dt className="label-xs">Status</dt><dd className="mt-1">{!loaded ? 'No data loaded' : artifact.source === 'demo' ? 'Bundled Databricks Results' : `Imported ${fmtDate(artifact.importedAt)}`}</dd></div>
+          <div className="rounded-lg border border-line/10 p-3">
+            <dt className="label-xs">Rows loaded</dt>
+            <dd className="num mt-1">
+              {datasetView === 'both' || !loaded ? fmtInt(artifact.rows.length) : <>{fmtInt(scopedCount)} <span className="text-xs text-subtle">of {fmtInt(artifact.rows.length)} ({datasetView})</span></>}
+            </dd>
+          </div>
+          <div className="col-span-2 rounded-lg border border-line/10 p-3">
+            <dt className="label-xs">Status · {scopeLabel}</dt>
+            <dd className="mt-1">{!loaded ? 'No data loaded' : artifact.source === 'demo' ? 'Bundled Databricks Results' : `Imported ${fmtDate(artifact.importedAt)}`}</dd>
+          </div>
         </dl>
 
         {report && (

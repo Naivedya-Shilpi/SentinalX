@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
 import { Grid2x2 } from 'lucide-react';
 import { useBenchmarkData } from '@/hooks/useBenchmarkData';
 import { useAppStore } from '@/store/useAppStore';
@@ -33,7 +32,10 @@ export default function ConfusionLab() {
   const setDatasetView = useAppStore((s) => s.setDatasetView);
   const source = useAppStore((s) => s.confusion.source);
 
-  const datasets = [...new Set(confusionRows.map((r) => r.dataset))].sort((a, b) => datasetOrder(a) - datasetOrder(b) || a.localeCompare(b));
+  const datasets = useMemo(
+    () => [...new Set(confusionRows.map((r) => r.dataset))].sort((a, b) => datasetOrder(a) - datasetOrder(b) || a.localeCompare(b)),
+    [confusionRows],
+  );
   const [dsState, setDs] = useState(() => (datasets.includes(globalView) ? globalView : datasets[0] ?? ''));
   useEffect(() => {
     if (datasets.includes(globalView)) setDs(globalView);
@@ -41,12 +43,16 @@ export default function ConfusionLab() {
   const ds = datasets.includes(dsState) ? dsState : datasets.includes(globalView) ? globalView : datasets[0] ?? '';
   const handleSelectDataset = (nextDs: string) => {
     setDs(nextDs);
-    if (globalView !== 'both') setDatasetView(nextDs);
+    setDatasetView(nextDs);
   };
-  const models = confusionRows
-    .filter((r) => r.dataset === ds)
-    .map((r) => r.model)
-    .sort((a, b) => modelOrder(a) - modelOrder(b) || a.localeCompare(b));
+  const models = useMemo(
+    () =>
+      confusionRows
+        .filter((r) => r.dataset === ds)
+        .map((r) => r.model)
+        .sort((a, b) => modelOrder(a) - modelOrder(b) || a.localeCompare(b)),
+    [confusionRows, ds],
+  );
   const [modelState, setModel] = useState('');
   const model = models.includes(modelState) ? modelState : models[0] ?? '';
 
@@ -163,20 +169,18 @@ export default function ConfusionLab() {
 function Cell({ k, value, total, delay }: { k: keyof typeof CELLS; value: number; total: number; delay: number }) {
   const c = CELLS[k];
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.94 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
+    <div
+      style={delay ? { animationDelay: `${delay}s` } : undefined}
       tabIndex={0}
       title={`${c.label}: ${c.tip}`}
       aria-label={`${c.label}: ${fmtInt(value)} records, ${fmtPct(value / total)} of test set. ${c.tip}`}
-      className={cn('group relative flex min-h-[130px] cursor-default flex-col items-center justify-center rounded-2xl border p-4 text-center transition-colors', TONE[c.tone])}
+      className={cn('page-enter group relative flex min-h-[130px] cursor-default flex-col items-center justify-center rounded-2xl border p-4 text-center transition-colors', TONE[c.tone])}
     >
       <span className="absolute left-3 top-2.5 text-[11px] font-semibold tracking-wider">{k.toUpperCase()}</span>
       <p className="num text-2xl font-semibold text-fg sm:text-3xl">{fmtInt(value)}</p>
       <p className="num mt-1 text-sm">{fmtPct(value / total)}</p>
       <p className="mt-1 text-[11px] text-muted">{c.label}</p>
       <span className="pointer-events-none absolute inset-x-2 bottom-full z-10 mb-1 hidden rounded-lg border border-line/20 bg-surface-2 px-2.5 py-1.5 text-[11px] text-fg shadow-xl group-hover:block group-focus:block">{c.tip}</span>
-    </motion.div>
+    </div>
   );
 }

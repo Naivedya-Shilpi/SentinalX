@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { ArrowDown, ArrowUp, ArrowUpDown, Download, Search, Trophy, X } from 'lucide-react';
 import { useBenchmarkData } from '@/hooks/useBenchmarkData';
 import { useAppStore, toast } from '@/store/useAppStore';
@@ -178,10 +177,8 @@ export default function Leaderboard() {
                     const entry = s.rankMap.get(row.id);
                     const top = entry?.rank === 1;
                     return (
-                      <motion.tr
+                      <tr
                         key={row.id}
-                        layout="position"
-                        transition={{ type: 'spring', stiffness: 420, damping: 40 }}
                         tabIndex={0}
                         onClick={() => setSelected(row)}
                         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setSelected(row))}
@@ -211,7 +208,7 @@ export default function Leaderboard() {
                         <td className="px-3 py-3.5">
                           {!entry ? <Badge tone="amber">Not ranked</Badge> : top ? <Badge tone="emerald" dot>{entry.tied ? 'Tied top' : 'Top performer'}</Badge> : entry.tied ? <Badge tone="neutral">Tied</Badge> : <Badge tone="neutral">Ranked</Badge>}
                         </td>
-                      </motion.tr>
+                      </tr>
                     );
                   })}
                 </tbody>

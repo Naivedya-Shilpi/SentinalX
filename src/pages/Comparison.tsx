@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { GitCompare, Minus, Sparkles, Swords } from 'lucide-react';
 import { useBenchmarkData } from '@/hooks/useBenchmarkData';
 import { useAppStore } from '@/store/useAppStore';
@@ -31,7 +30,7 @@ export default function Comparison() {
   const ds = datasets.includes(dsState) ? dsState : datasets.includes(globalView) ? globalView : datasets[0] ?? '';
   const handleSelectDataset = (nextDs: string) => {
     setDs(nextDs);
-    if (globalView !== 'both') setDatasetView(nextDs);
+    setDatasetView(nextDs);
   };
   const dsRows = useMemo(() => rows.filter((r) => r.dataset === ds), [rows, ds]);
   const available = useMemo(() => dsRows.map((r) => r.model), [dsRows]);
@@ -96,7 +95,7 @@ export default function Comparison() {
           const rk = rankOf(rows, r, rankingMetric);
           const color = modelColor(r.model, i);
           return (
-            <motion.div key={r.id} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: i * 0.04 }}>
+            <div key={r.id} className="page-enter" style={{ animationDelay: `${i * 0.04}s` }}>
               <Card className="h-full p-5" style={{ boxShadow: `0 0 0 1px ${color}55, 0 0 36px -10px ${color}88` }}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -123,7 +122,7 @@ export default function Comparison() {
                   })}
                 </dl>
               </Card>
-            </motion.div>
+            </div>
           );
         })}
       </section>

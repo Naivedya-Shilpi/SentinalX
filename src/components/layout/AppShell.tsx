@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronsLeft, ChevronsRight, Menu, Moon, Presentation, Search, Sun, UploadCloud, X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useAppStore, toast } from '@/store/useAppStore';
@@ -10,7 +10,7 @@ import { METRICS } from '@/data/metrics';
 import { datasetColor } from '@/data/datasets';
 import { modelColor } from '@/data/models';
 import { Button } from '@/components/ui/Button';
-import { PageSkeleton, Toaster } from '@/components/ui/Feedback';
+import { Toaster } from '@/components/ui/Feedback';
 import { DatasetSwitcher, SourceBadge } from '@/components/common/Controls';
 import { cn } from '@/utils/format';
 
@@ -72,13 +72,11 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <motion.span
-                    layoutId="nav-active"
-                    className="absolute inset-0 rounded-lg border border-cyan/20 bg-gradient-to-r from-cyan/15 to-violet/10"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  <span
+                    className="absolute inset-0 rounded-lg border border-cyan/20 bg-gradient-to-r from-cyan/15 to-violet/10 transition-all duration-200"
                   />
                 )}
-                {isActive && <motion.span layoutId="nav-bar" className="absolute -left-2.5 h-5 w-[3px] rounded-full bg-cyan shadow-[0_0_12px_rgb(var(--cyan))]" />}
+                {isActive && <span className="absolute -left-2.5 h-5 w-[3px] rounded-full bg-cyan shadow-[0_0_12px_rgb(var(--cyan))]" />}
                 <n.icon className={cn('relative h-[18px] w-[18px] shrink-0', isActive && 'text-cyan')} />
                 {!collapsed && <span className="relative truncate">{n.label}</span>}
               </>
@@ -257,8 +255,6 @@ function usePresentationMode() {
 export function AppShell() {
   useThemeClass();
   const location = useLocation();
-  // Captured per render so an exiting (animating-out) page keeps its own element instead of the new route.
-  const outlet = useOutlet();
   const navigate = useNavigate();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
@@ -303,7 +299,7 @@ export function AppShell() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  }, [presentation, slides, slideIndex, navigate, exit]);
 
   const goSlide = (d: number) => navigate(slides[(Math.max(slideIndex, 0) + d + slides.length) % slides.length].path);
 
@@ -414,11 +410,9 @@ export function AppShell() {
         )}
 
         <main id="main" className={cn('mx-auto w-full px-4 py-6 md:px-6 md:py-8', presentation ? 'max-w-[1800px] text-[1.04em]' : 'max-w-[1500px]')}>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}>
-              <Suspense fallback={<PageSkeleton />}>{outlet}</Suspense>
-            </motion.div>
-          </AnimatePresence>
+          <div key={location.pathname} className="page-enter">
+            <Outlet />
+          </div>
         </main>
       </div>
       <Toaster />

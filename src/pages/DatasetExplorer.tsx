@@ -58,7 +58,7 @@ export default function DatasetExplorer() {
   const name = names.includes(sel) ? sel : names[0];
   const handleSelectDataset = (nextName: string) => {
     setSel(nextName);
-    if (globalView !== 'both' && loaded.includes(nextName)) setDatasetView(nextName);
+    if (loaded.includes(nextName)) setDatasetView(nextName);
   };
   const info = getDatasetInfo(name);
   const meta = metadata.rows.find((m) => m.dataset === name);

@@ -1,5 +1,4 @@
-import { useId, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import type { ReactNode } from 'react';
 import { cn } from '@/utils/format';
 
 export interface SegmentOption<T extends string> {
@@ -19,7 +18,6 @@ interface SegmentedProps<T extends string> {
 
 /** Accessible segmented control (radiogroup) with an animated selection pill. */
 export function Segmented<T extends string>({ value, onChange, options, size = 'md', className, ariaLabel }: SegmentedProps<T>) {
-  const id = useId();
   return (
     <div
       role="radiogroup"
@@ -51,10 +49,8 @@ export function Segmented<T extends string>({ value, onChange, options, size = '
             )}
           >
             {active && (
-              <motion.span
-                layoutId={`seg-${id}`}
-                className="absolute inset-0 -z-10 rounded-md border border-line/15 bg-surface-2 shadow-[0_1px_8px_-2px_rgb(0_0_0/0.4)]"
-                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+              <span
+                className="absolute inset-0 -z-10 rounded-md border border-line/15 bg-surface-2 shadow-[0_1px_8px_-2px_rgb(0_0_0/0.4)] transition-all duration-200"
               />
             )}
             {o.label}

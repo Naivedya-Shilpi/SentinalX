@@ -80,7 +80,7 @@ function Spotlight({ rows, datasets, metric }: { rows: BenchmarkRow[]; datasets:
         {!winner ? (
           <p className="text-sm text-muted">No model has a valid {METRICS[metric].label} value for {dataset}.</p>
         ) : (
-          <motion.div key={`${dataset}-${metric}-${winner.row.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+          <div key={`${dataset}-${metric}-${winner.row.id}`} className="page-enter grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
             <div>
               <div className="flex items-center gap-2">
                 <Badge tone="emerald" dot>
@@ -117,7 +117,7 @@ function Spotlight({ rows, datasets, metric }: { rows: BenchmarkRow[]; datasets:
               ))}
               <p className="col-span-2 text-[11px] leading-relaxed text-subtle">The leader is recomputed from the loaded data whenever the dataset or ranking metric changes.</p>
             </div>
-          </motion.div>
+          </div>
         )}
       </CardBody>
     </Card>
